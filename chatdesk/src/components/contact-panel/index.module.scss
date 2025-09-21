@@ -1,0 +1,255 @@
+.panel {
+  width: 340px;
+  height: 100vh;
+  background: #fff;
+  border-left: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 8px 16px;
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 6px;
+}
+.title {
+  font-weight: 700;
+  font-size: 15px;
+}
+.iconBtn {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: #9ca3af;
+}
+
+.profileCard {
+  border: 1px solid #eef0f3;
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  margin: 6px 0 10px;
+}
+.avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: #64748b;
+  font-size: 20px;
+}
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.name {
+  font-weight: 700;
+}
+.linkIcons {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+.link {
+  color: #9ca3af;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.fields {
+  margin-top: 8px;
+  display: grid;
+  gap: 6px;
+}
+.fieldRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #111827;
+}
+.fieldIcon {
+  width: 18px;
+  text-align: center;
+  color: #6b7280;
+}
+.fieldText {
+  flex: 1;
+}
+.dim {
+  color: #9ca3af;
+}
+
+.quickActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.roundBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  cursor: pointer;
+}
+.danger {
+  border-color: #fca5a5;
+  background: #fff0f0;
+  color: #ef4444;
+}
+
+.section {
+  border: 1px solid #eef0f3;
+  border-radius: 12px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+.sectionHeader {
+  width: 100%;
+  text-align: left;
+  background: #fff;
+  border: 0;
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+.sectionTitle {
+  font-weight: 600;
+}
+.chevron {
+  margin-left: auto;
+  color: #9ca3af;
+  transition: transform 0.15s ease;
+}
+.rotate {
+  transform: rotate(180deg);
+}
+.sectionBody {
+  padding: 10px 12px;
+  background: #fff;
+}
+.empty {
+  color: #9ca3af;
+}
+
+.rowSpace {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.muted {
+  color: #9ca3af;
+}
+
+.assignRow {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 4px 0;
+}
+.agentBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f3f4f6;
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+.agentDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #9ca3af;
+}
+.agentDot[data-online="true"] {
+  background: #22c55e;
+}
+.agentName {
+  font-size: 13px;
+}
+.teamBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f3f4f6;
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+.teamIcon {
+  font-weight: 700;
+}
+.teamName {
+  font-size: 13px;
+}
+
+.selectLike {
+  position: relative;
+  width: 100%;
+}
+.selectLike select {
+  width: 100%;
+  appearance: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: #fff;
+}
+.selectLike .chevron {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.tag {
+  background: #eef2ff;
+  color: #2563eb;
+  border: 1px solid #c7d2fe;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+.tagX {
+  margin-left: 6px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: #2563eb;
+}
+.tagInputRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.plusBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  cursor: pointer;
+}
+.tagInput {
+  flex: 1;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 8px;
+  outline: none;
+}

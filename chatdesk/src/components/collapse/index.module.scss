@@ -1,0 +1,23 @@
+.section {
+  margin-bottom: 8px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  color: #374151;
+  font-weight: 600;
+  user-select: none;
+}
+
+.header:hover {
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+.content {
+  padding-left: 24px;
+}
