@@ -1,0 +1,164 @@
+.chatWindow {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+.header {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border-bottom: 1px solid #eee;
+  font-weight: 600;
+}
+
+.messageArea {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #fafafa;
+}
+
+.messageRow {
+  display: flex;
+  padding: 8px 12px;
+}
+
+.messageBubble {
+  border-radius: 12px;
+  padding: 10px 12px;
+  max-width: 560px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.bubbleMe {
+  margin-left: auto;
+  background: #e6f7ff;
+}
+
+.bubbleOther {
+  background: #f1f5f9;
+}
+
+.jumpBottomBtn {
+  position: absolute;
+  right: 16px;
+  bottom: 112px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+.footer {
+  border-top: 1px solid #eee;
+  padding: 12px;
+}
+
+/* 容器 */
+.composerWrap {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  padding: 10px;
+  position: relative;
+}
+
+/* 便笺模式的整体配色 */
+.note {
+  background: #fdecc8; /* 淡黄 */
+  border-color: #f6d29a;
+}
+
+/* 顶部模式切换（胶囊按钮） */
+.modeSwitch {
+  display: inline-flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.switchBtn {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f7f7f8;
+  cursor: pointer;
+}
+.switchBtnActive {
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
+}
+
+/* 工具条 */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #6b7280;
+  font-size: 14px;
+  padding: 4px 2px 8px;
+}
+
+/* 编辑区 */
+.editorBox {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+/* 底部动作区 */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.iconBtn {
+  height: 34px;
+  width: 34px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  cursor: pointer;
+}
+.primary {
+  margin-left: auto;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  color: #fff;
+  border: 1px solid #2563eb;
+  background: #2563eb;
+}
+.primaryNote {
+  margin-left: auto;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  color: #fff;
+  border: 1px solid #d97706;
+  background: #d97706; /* 橙色 */
+}
+
+/* 右上角“全屏/展开”图标位（示意） */
+.corner {
+  position: absolute;
+  right: 10px;
+  top: 6px;
+  font-size: 12px;
+  color: #9ca3af;
+  cursor: pointer;
+}
