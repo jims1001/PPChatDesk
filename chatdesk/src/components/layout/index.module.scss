@@ -1,0 +1,54 @@
+.layout {
+  height: 100vh;
+  display: flex;
+  background: #fff;
+}
+
+/* 左侧固定宽度（按你现状微调） */
+.left {
+  width: 260px;
+  min-width: 220px;
+  border-right: 1px solid #eef0f3;
+}
+
+/* 中栏个性化（可不写，默认样式在组件里） */
+.midPane {
+  background: #fff;
+}
+.midHeader {
+  background: #fff;
+}
+.midBody {
+  background: #fff;
+}
+
+/* 中栏与右栏之间的拖拽条（页面级定制） */
+.resizer {
+  width: 6px;
+  cursor: col-resize;
+  background: linear-gradient(
+    to right,
+    transparent 0,
+    transparent 2px,
+    #eef0f3 2px,
+    #eef0f3 4px,
+    transparent 4px
+  );
+}
+.resizer:hover {
+  background: linear-gradient(
+    to right,
+    transparent 0,
+    transparent 1px,
+    #d7dbe0 1px,
+    #d7dbe0 5px,
+    transparent 5px
+  );
+}
+
+/* 右侧聊天区占满剩余宽度 */
+.right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}

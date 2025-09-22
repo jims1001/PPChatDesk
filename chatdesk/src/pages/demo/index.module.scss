@@ -1,0 +1,25 @@
+.demo {
+  width: 100%;
+  height: 480px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.paneA {
+  background: #fafafa;
+}
+.paneB {
+  background: #fff;
+}
+.paneC {
+  background: #fafafa;
+}
+.header {
+  font-size: 12px;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  color: #666;
+}
+.body {
+  padding: 12px;
+}

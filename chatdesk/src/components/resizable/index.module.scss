@@ -1,0 +1,53 @@
+.group {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: calc(100vh - 56px); // 预留给顶部标题，可自行调整
+  overflow: hidden;
+  border-top: 1px solid #eee;
+}
+
+.pane {
+  position: relative;
+  min-width: 0; // 让内容可收缩
+  height: 100%;
+  overflow: auto;
+  background: #fff;
+  border-right: 1px solid #f0f0f0;
+
+  // 示例样式可删
+  & :global(.pane-inner) {
+    padding: 12px;
+  }
+}
+
+.gutter {
+  position: relative;
+  height: 100%;
+  flex: 0 0 auto;
+  cursor: col-resize;
+  background: transparent;
+
+  // 辅助可见的拖拽抓手（细线）
+  &::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    transform: translateX(-50%);
+    background: #e6e6e6;
+  }
+
+  &:hover::before {
+    background: #d0d0d0;
+  }
+}
+
+// 拖拽时禁用选择
+.noselect {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
