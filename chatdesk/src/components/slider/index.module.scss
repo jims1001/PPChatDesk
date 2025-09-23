@@ -1,0 +1,228 @@
+/* 统一变量 */
+:root {
+  --c-border: #e5e7eb;
+  --c-text: #374151;
+  --c-text-weak: #6b7280;
+  --c-brand: #3b82f6;
+  --c-brand-weak: #eff6ff;
+  --c-hover: #f3f4f6;
+  --radius: 8px;
+}
+
+.sidebar {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  width: 100%;
+  color: var(--c-text);
+  border-right: 1px solid var(--c-border);
+}
+
+.compact {
+  /* 给紧凑模式下需要缩小内边距的元素用到（通过后代选择器控制） */
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 56px; /* 相当于 h-14 */
+  border-bottom: 1px solid var(--c-border);
+  padding: 0 16px;
+}
+
+.compact .header {
+  padding: 0 8px;
+}
+
+.brandDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #3b82f6;
+}
+
+.brandText {
+  font-weight: 600;
+}
+
+.headerRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--c-text-weak);
+}
+
+.headerHint {
+  white-space: nowrap;
+}
+
+.closeBtn {
+  margin-left: 8px;
+  padding: 4px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--c-hover);
+  }
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+.nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.section {
+  margin-bottom: 12px;
+}
+
+.sectionTitle {
+  padding: 8px 12px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--c-text-weak);
+}
+
+.sectionBody {
+  display: grid;
+  gap: 6px;
+}
+
+/* Row（普通行，不带路由） */
+.rowWrap {
+  padding: 0 8px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  color: var(--c-text);
+  border-radius: var(--radius);
+}
+
+.rowNormal {
+  gap: 8px;
+  padding: 8px 12px;
+
+  &:hover {
+    background: var(--c-hover);
+  }
+}
+
+.rowCompact {
+  justify-content: center;
+  padding: 8px;
+
+  &:hover {
+    background: var(--c-hover);
+  }
+}
+
+/* NavItem（带路由跳转） */
+.navItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--c-text);
+  font-size: 14px;
+
+  &:hover {
+    background: var(--c-hover);
+  }
+}
+
+.navItemNormal {
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.navItemCompact {
+  display: grid;
+  place-items: center;
+  padding: 8px;
+}
+
+.active {
+  background: var(--c-brand-weak);
+  color: #1d4ed8; /* 深一点的蓝，类似 text-blue-700 */
+}
+
+/* 底部账户区 */
+.footer {
+  border-top: 1px solid var(--c-border);
+  padding: 12px;
+  font-size: 12px;
+  color: var(--c-text-weak);
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #10b981;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.accountMeta {
+  min-width: 0; /* 让子元素省略号生效 */
+}
+
+.accountName {
+  color: var(--c-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.accountMail {
+  color: var(--c-text-weak);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 通用工具 */
+.ellipsis {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 滚动条（可选，若需要更自然的滚动外观） */
+.nav::-webkit-scrollbar {
+  width: 8px;
+}
+.nav::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 999px;
+}
+.nav::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}

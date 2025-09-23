@@ -17,6 +17,7 @@ import { useWSList } from "@/net/lib/ws/useWSList";
 import { useEffect, useRef } from 'react'
 import { parseAs, type ConnectedPayload } from './net/lib/ws/type'
 import ResizableThreePanesDemo from './pages/demo'
+import ChatWindow from './pages/chatview/ChatWindow'
 
 export default function App() {
 
@@ -147,7 +148,12 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<div><ResizableThreePanesDemo></ResizableThreePanesDemo></div>}>
+      <Route path="/" element={<SupportInboxLayout />}>
+        <Route path='main' element={<ResizableThreePanesDemo></ResizableThreePanesDemo>}>
+          <Route index element={<Navigate to="chat" replace />} />
+          <Route path="chat" element={<ChatWindow />} />
+        </Route>
+
         <Route index element={<Navigate to="/inbox/my" replace />} />
         <Route path="inbox">
           <Route index element={<Navigate to="my" replace />} />

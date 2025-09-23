@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import ResizablePaneGroup from '@/components/resizable/resizablePaneGroup'
 import ResizablePane from '@/components/resizable/resizablePane'
+import Sidebar from '@/components/slider'
+import { Outlet } from "react-router-dom";
 
 export default function App() {
     const [sizes, setSizes] = useState<number[]>([25, 50, 25])
@@ -20,16 +22,18 @@ export default function App() {
                 onSizesChange={setSizes}
             >
                 <ResizablePane className="pane-a">
-                    <div className="pane-inner">
-                        <h3>A 面板（可拖右侧手柄，影响 A/B）</h3>
-                        <p>放导航/列表/树等。</p>
-                    </div>
+                    <aside
+                        className="hidden lg:flex border-r border-gray-200 flex-col"
+
+                    >
+                        <Sidebar compact={false} />
+                    </aside>
+
                 </ResizablePane>
 
                 <ResizablePane className="pane-b">
                     <div className="pane-inner">
-                        <h3>B 面板（左右手柄都可拖，影响 A/B 或 B/C）</h3>
-                        <p>主区域内容。</p>
+                        <Outlet />   {/* 这里渲染子路由内容 */}
                     </div>
                 </ResizablePane>
 
