@@ -17,7 +17,7 @@ body {
 
 /* 真的需要 flex 布局时，记得让子项可拉伸 */
 .app,
-.page,
+.pag e,
 .flex-fill {
   width: 100%;
   min-width: 0; /* 防止最小内容宽导致不收缩 */

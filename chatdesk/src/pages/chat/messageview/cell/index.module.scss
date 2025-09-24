@@ -1,0 +1,40 @@
+.alignLeft {
+  display: flex;
+  justify-content: flex-start;
+}
+.alignRight {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.bubble {
+  max-width: 70%;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 6px;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #e5e7eb; /* in */
+  color: #111827;
+}
+.in {
+  background: #e5e7eb;
+}
+.out {
+  background: #dbeafe;
+} /* out: light blue */
+
+.body {
+  word-break: break-word;
+}
+.meta {
+  color: #9ca3af;
+  font-size: 11px;
+  margin-top: -2px;
+  align-self: flex-end;
+}
+
+.systemWrap {
+  display: flex;
+  justify-content: center;
+}
