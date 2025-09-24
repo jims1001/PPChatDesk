@@ -137,8 +137,6 @@ export default function App() {
   // }, []);
 
 
-
-
   // const sendText = () => {
   //   if (!wsRef.current) return;
   //   const ws = wsRef.current;
@@ -148,13 +146,12 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<SupportInboxLayout />}>
-        <Route path='main' element={<ResizableThreePanesDemo></ResizableThreePanesDemo>}>
-          <Route index element={<Navigate to="chat" replace />} />
-          <Route path="chat" element={<ChatWindow />} />
-        </Route>
+      <Route path="/" element={<ResizableThreePanesDemo />}>
+        <Route index element={<Navigate to="chat" replace />} />
+        <Route path="chat" element={<ChatWindow />} />
 
-        <Route index element={<Navigate to="/inbox/my" replace />} />
+
+        <Route element={<Navigate to="/inbox/my" replace />} />
         <Route path="inbox">
           <Route index element={<Navigate to="my" replace />} />
           <Route path="my" element={<InboxMy />} />

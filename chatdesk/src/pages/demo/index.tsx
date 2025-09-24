@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import ResizablePaneGroup from '@/components/resizable/resizablePaneGroup'
 import ResizablePane from '@/components/resizable/resizablePane'
 import Sidebar from '@/components/slider'
 import { Outlet } from "react-router-dom";
+import ConversationContainer from '../chat/covestation';
 
 export default function App() {
     const [sizes, setSizes] = useState<number[]>([25, 50, 25])
@@ -31,18 +32,17 @@ export default function App() {
 
                 </ResizablePane>
 
+
                 <ResizablePane className="pane-b">
+                    <ConversationContainer></ConversationContainer>
+                </ResizablePane>
+
+                <ResizablePane className="pane-c">
                     <div className="pane-inner">
                         <Outlet />   {/* 这里渲染子路由内容 */}
                     </div>
                 </ResizablePane>
 
-                <ResizablePane className="pane-c">
-                    <div className="pane-inner">
-                        <h3>C 面板（可拖左侧手柄，影响 B/C）</h3>
-                        <p>放详情/信息面板等。</p>
-                    </div>
-                </ResizablePane>
             </ResizablePaneGroup>
         </>
     )

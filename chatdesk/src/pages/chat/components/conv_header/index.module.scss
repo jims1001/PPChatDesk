@@ -1,0 +1,91 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+}
+
+.openBtn {
+  padding: 2px 6px;
+  font-size: 12px;
+  border: 1px solid #dcdcdc;
+  border-radius: 6px;
+  background: #f7f7f7;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.openBtn:hover {
+  background: #efefef;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.relative {
+  position: relative;
+}
+.flex {
+  display: flex;
+}
+
+.iconBtn {
+  inline-size: 24px;
+  block-size: 24px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.1); /* 等价 bg-n-slate-9/10 */
+  color: #0f172a; /* 等价 text-n-slate-12 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px; /* 控制 i-lucide-* 的 1em */
+  outline: 1px solid transparent;
+  transition: background 0.2s ease;
+  cursor: pointer;
+}
+.iconBtn:hover,
+.iconBtn:focus-visible {
+  background: rgba(15, 23, 42, 0.2);
+} /* hover/focus 等价 */
+
+.hideOnMobile {
+  display: none;
+}
+@media (min-width: 768px) {
+  .hideOnMobile {
+    display: inline-flex;
+  }
+}
+
+.dirAware {
+  transform: rotate(0deg);
+}
+:dir(rtl) .dirAware {
+  transform: rotate(180deg);
+}
+
+.teleport {
+  position: absolute;
+  z-index: 50;
+  margin-top: 0.5rem;
+  inset-inline-start: 0;
+}

@@ -1,0 +1,46 @@
+/* 外层：给出确定的宽高，由父级（比如 ResizablePane）控制即可 */
+.ChatViewApp {
+  width: 100%;
+  height: 100vh; /* 或者 100%（当父级已给出高度时） */
+  background: #f9fafb;
+  padding: 12px;
+  box-sizing: border-box;
+  display: flex;
+}
+
+/* 面板：占满父容器（宽度 & 高度），不要 max-width / margin auto */
+.panel {
+  flex: 1 1 0;
+  min-width: 0; /* 允许子元素在 flex 中正确收缩 */
+  min-height: 0;
+
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+  align-self: stretch; /* 防止被父 flex 居中时宽度不满 */
+}
+
+/* Tab 下的内容容器：等高父容器，同时也等宽 */
+.tabPanelItem {
+  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* 内部滚动区（放列表）：同时填满宽高 */
+.fillScroll {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  overflow: auto;
+}

@@ -1,0 +1,45 @@
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.tab {
+  position: relative;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280; /* gray-500 */
+  background: transparent;
+  border: none;
+  cursor: pointer;
+
+  &:hover {
+    color: #374151;
+  } /* gray-700 */
+}
+
+.count {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 10px;
+  font-weight: 600;
+  background: #edf2ff;
+  color: #3b82f6; /* blue-500 */
+}
+
+.active {
+  color: #3b82f6; /* blue-500 */
+}
+
+.underline {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -1px;
+  height: 2px;
+  background: #3b82f6;
+  border-radius: 2px;
+  content: "";
+}
