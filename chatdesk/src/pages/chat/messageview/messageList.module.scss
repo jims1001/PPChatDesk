@@ -1,11 +1,11 @@
 .container {
   position: relative;
-  height: 100%;
   width: 100%;
+  height: 100%;
 }
 .virtuoso {
-  height: 100%;
   width: 100%;
+  height: 100%;
 }
 .row {
   padding: 4px 8px;
@@ -16,10 +16,14 @@
   font-size: 12px;
   padding: 8px 0;
 }
+
+/* 固定在底部右下角 */
 .jumpLatest {
   position: absolute;
   right: 12px;
-  bottom: 12px;
+  bottom: 12px; /* 关键：用 bottom，而不是 top */
+  /* 防止继承导致跑到顶部： */
+  top: auto;
   border: 1px solid #d1d5db;
   border-radius: 999px;
   padding: 6px 10px;

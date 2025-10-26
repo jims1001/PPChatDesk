@@ -17,9 +17,16 @@ import { useWSList } from "@/net/lib/ws/useWSList";
 import { useEffect, useRef } from 'react'
 import { parseAs, type ConnectedPayload } from './net/lib/ws/type'
 import ResizableThreePanesDemo from './pages/demo'
-import ChatWindow from './pages/chatview/ChatWindow'
+import ChatWindow from '@/pages/chat/messageview'
+import { useGet } from './net/hook/useGet'
 
 export default function App() {
+
+
+  const { data } = useGet('api/users/self', undefined, undefined, {
+    baseURL: 'http://192.168.1.125'
+  });
+  console.log(data)
 
   // const wsRef = useRef<any>(null);
 
@@ -150,7 +157,6 @@ export default function App() {
         <Route index element={<Navigate to="chat" replace />} />
         <Route path="chat" element={<ChatWindow />} />
 
-
         <Route element={<Navigate to="/inbox/my" replace />} />
         <Route path="inbox">
           <Route index element={<Navigate to="my" replace />} />
@@ -166,6 +172,10 @@ export default function App() {
         <Route path="settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/inbox/my" replace />} />
       </Route>
+
+
     </Routes>
+
+
   )
 }

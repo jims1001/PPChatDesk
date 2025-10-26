@@ -10,6 +10,9 @@ interface Props {
     loadingMore?: boolean;
     onLoadOlder?: () => void;
     footerText?: string;
+
+    /** 关键：第一条数据的虚拟索引，用于“头部追加时不跳动” */
+    firstItemIndex: number;
 }
 
 export default function MessageList({
@@ -18,9 +21,19 @@ export default function MessageList({
     loadingMore = false,
     onLoadOlder,
     footerText = "",
+    firstItemIndex = 0,
 }: Props) {
     const virtuosoRef = useRef<VirtuosoHandle>(null);
     const [showJump, setShowJump] = useState(false);
+
+    const goLatest = () => {
+        if (!virtuosoRef.current) return;
+        // 更稳妥：直接把容器滚到最大高度（避免 firstItemIndex 计算出现负数导致反向）
+        virtuosoRef.current.scrollTo({ top: 10 ** 9, behavior: "smooth" });
+        // 如果你仍然想用索引，可保留这行作为“首选”，失败再回退到上面：
+        // const idx = firstItemIndex + items.length - 1;
+        // virtuosoRef.current.scrollToIndex({ index: idx, align: "end", behavior: "smooth" });
+    };
 
     return (
         <div className={styles.container}>
@@ -28,12 +41,15 @@ export default function MessageList({
                 ref={virtuosoRef}
                 className={styles.virtuoso}
                 data={items}
-                itemContent={(_, item) => (
+                firstItemIndex={firstItemIndex}
+                itemContent={(i, item) => (
                     <div className={styles.row}>
-                        <MessageCell msg={item} />
+                        <MessageCell msg={item as ChatMessage} />
                     </div>
                 )}
+                computeItemKey={(_, item) => (item as ChatMessage).id}
                 followOutput="auto"
+                increaseViewportBy={{ top: 600, bottom: 600 }}
                 atBottomStateChange={(atBottom) => setShowJump(!atBottom)}
                 startReached={() => {
                     if (onLoadOlder && hasMore && !loadingMore) onLoadOlder();
@@ -47,13 +63,9 @@ export default function MessageList({
                     Footer: () => <div style={{ height: 8 }} />,
                 }}
             />
+
             {showJump && (
-                <button
-                    className={styles.jumpLatest}
-                    onClick={() => virtuosoRef.current?.scrollToIndex({
-                        index: items.length - 1, align: "end", behavior: "smooth",
-                    })}
-                >
+                <button className={styles.jumpLatest} onClick={goLatest}>
                     跳到最新
                 </button>
             )}

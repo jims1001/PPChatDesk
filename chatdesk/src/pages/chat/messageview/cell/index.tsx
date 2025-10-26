@@ -1,5 +1,4 @@
-import React from "react";
-import styles from "./MessageCell.module.scss";
+import styles from "./index.module.scss";
 import type { ChatMessage } from "@/pages/chat/messageview/type";
 
 // 各类型渲染组件

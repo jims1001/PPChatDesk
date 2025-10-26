@@ -1,7 +1,7 @@
-import React, { useCallback, useRef } from "react";
+import { useCallback, useRef } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import styles from "./Composer.module.scss";
+import styles from "./index.module.scss";
 
 interface Props {
     onSend: (html: string, plainText: string) => void;

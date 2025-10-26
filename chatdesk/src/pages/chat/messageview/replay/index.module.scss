@@ -1,0 +1,286 @@
+.replyBoxWrapper {
+  --panel: #ffffff;
+  --panel-2: #ffffff;
+  --outline: #e5e7eb;
+  --outline-strong: #dbe0e6;
+  --text: #0f172a;
+  --muted: #64748b;
+  --accent: #1d6fff;
+  --accent-contrast: #fff;
+  --chip-bg: #f3f4f6;
+  --chip-knob: #ffffff;
+  --danger: #ef5350;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: var(--text);
+
+  &[data-disabled="true"] {
+    opacity: 0.6;
+    pointer-events: none;
+    user-select: none;
+  }
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 3.25rem;
+  gap: 0.5rem;
+  padding-inline: 0.5rem;
+}
+
+/* —— 动态滑块按钮 —— */
+.toggleChip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px; /* 方便用 top/bottom 夹住滑块的高度 */
+  height: 32px;
+  gap: 0.25rem;
+  border-radius: 999px;
+  background: var(--chip-bg);
+  border: 1px solid var(--outline);
+  isolation: isolate;
+}
+.toggleChipItem {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  height: 24px; /* 32 - 2*4 */
+  line-height: 24px; /* 确保文字在白色框内垂直居中 */
+  padding: 0 0.5rem;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  color: #111827;
+}
+/* 滑块：宽度 & 位移由 CSS 变量控制，高度由上下夹紧，保证覆盖完整 */
+.toggleKnob {
+  position: absolute;
+  z-index: 1;
+  top: 4px;
+  bottom: 4px;
+  left: 0; /* 关键：以父容器 padding 边为基准 */
+  width: var(--chip-width);
+  border-radius: 999px;
+  background: var(--chip-knob);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transform: translate3d(var(--translate-x, 0px), 0, 0);
+  transition: transform 0.25s ease, width 0.25s ease;
+  will-change: transform, width;
+}
+
+.actionsLeft {
+  flex: 1;
+}
+
+.iconBtn {
+  height: 2.25rem;
+  width: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid var(--outline);
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+
+  &:hover {
+    background: #f8fafc;
+    color: #0f172a;
+  }
+}
+.iconBox {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* —— 编辑器卡片 —— */
+.editorCard {
+  background: var(--panel);
+  border-radius: 12px;
+  border: 1px solid var(--outline);
+  padding: 0.25rem;
+}
+
+/* ProseMirror 宿主（menubar-wrapper + menubar + contentEditable 会插入这里） */
+.pmWrapper {
+}
+
+/* 包裹器（浮动模式会生成） */
+:global(.ProseMirror-menubar-wrapper) {
+  border-radius: 10px;
+  border: 1px solid var(--outline);
+  overflow: hidden;
+  background: #fff;
+}
+
+/* 一排菜单 */
+:global(.ProseMirror-menubar) {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 40px;
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid var(--outline);
+  background: #fff;
+}
+:global(.ProseMirror-menuitem) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #334155;
+  &:hover {
+    background: #f1f5f9;
+  }
+}
+:global(.ProseMirror-menu-disabled) {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* 内容区（给 view.attrs.class = ProseMirror-woot-style） */
+:global(.ProseMirror-woot-style) {
+  background: var(--panel-2);
+  padding: 0.75rem;
+  line-height: 1.6;
+  font-size: 14px;
+  min-height: calc(var(--min-rows, 4) * 1rem);
+  max-height: 40vh;
+  overflow: auto;
+  border-radius: 0 0 10px 10px;
+
+  &[data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: var(--muted);
+  }
+
+  p {
+    margin: 0.25rem 0;
+  }
+  ul,
+  ol {
+    margin: 0.25rem 0 0.25rem 1.25rem;
+  }
+  code {
+    background: #f1f5f9;
+    border-radius: 4px;
+    padding: 0.05rem 0.3rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
+      "Liberation Mono", monospace;
+    font-size: 12px;
+  }
+  pre {
+    background: #0f1720;
+    color: #e5e7eb;
+    border-radius: 6px;
+    padding: 0.6rem 0.7rem;
+    overflow: auto;
+  }
+}
+
+/* —— 附件 —— */
+.attachPreview {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.25rem 0;
+}
+.attachItem {
+  position: relative;
+  border: 1px solid var(--outline);
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 0.25rem;
+}
+.thumb {
+  display: block;
+  width: 88px;
+  height: 66px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.fileBadge {
+  max-width: 180px;
+  padding: 0.35rem 0.5rem;
+  font-size: 12px;
+  border-radius: 6px;
+  background: #eef2f7;
+  color: #0f172a;
+}
+.removeAttachBtn {
+  position: absolute;
+  right: -8px;
+  top: -8px;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--danger);
+  color: #fff;
+  cursor: pointer;
+  line-height: 20px;
+  text-align: center;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* —— 底部 —— */
+.bottomRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.5rem 0.25rem;
+}
+.leftWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.circleBtn {
+  height: 32px;
+  width: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #0f172a;
+  cursor: pointer;
+  &:hover {
+    background: #eef2f7;
+  }
+}
+.rightWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.sendBtn {
+  height: 36px;
+  padding: 0 1rem;
+  border-radius: 10px;
+  border: 0;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease, opacity 0.15s ease;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  &:not(:disabled):hover {
+    filter: brightness(1.05);
+  }
+}

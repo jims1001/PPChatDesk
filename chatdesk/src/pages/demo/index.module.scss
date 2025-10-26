@@ -5,14 +5,13 @@
   border-radius: 12px;
   overflow: hidden;
 }
-.paneA {
-  background: #fafafa;
+
+.pane-c {
+  height: 100%;
 }
-.paneB {
-  background: #fff;
-}
-.paneC {
-  background: #fafafa;
+
+.pane-inner {
+  height: 100%;
 }
 .header {
   font-size: 12px;
