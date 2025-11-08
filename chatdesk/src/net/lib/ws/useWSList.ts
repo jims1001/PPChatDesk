@@ -1,33 +1,30 @@
-import { useCallback, useEffect, useRef } from "react";
+// hooks/useWSList.ts
+import { useEffect, useRef, useCallback } from "react";
 import useSWR from "swr";
-// 如果你仍保留 JSONValue 约束，可按你的 types.ts 调整
-import type { JSONValue } from "@/net/lib/ws/type";
-import { useWS } from "@/net/lib/ws/useWS";
+import { useWSConn } from "./context";
 
 export interface UseWSListOptions<T> {
   listKey: string;
-  socket: Parameters<typeof useWS<T>>[0];
-  reduce?: (prev: T[], newItem: T) => T[];
+  reduce?: (prev: T[], incoming: T) => T[];
   max?: number;
 }
 
-/**
- * 将 push 进来的 ws.data 追加到 SWR 列表缓存中。
- * 关键修复点：使用 useEffect 监听 ws.data 变化后再 mutate，避免在 render 中 setState。
- */
-export function useWSList<T = JSONValue>(opts: UseWSListOptions<T>) {
-  const { listKey, socket, reduce, max = 200 } = opts;
+export function useWSList<T = any>(opts: UseWSListOptions<T>) {
+  const { listKey, reduce, max = 200 } = opts;
+
+  // 👇 拿到的就是同一条 ws（里面有 data、send、readyState）
+  const ws = useWSConn<T>();
+
   const { data: list, mutate: setList } = useSWR<T[]>(listKey, {
     fallbackData: [],
   });
-  const ws = useWS<T>(socket);
 
-  // 防止同一引用的 data 被重复处理（例如父组件重复渲染但 ws.data 未变化）
   const lastDataRef = useRef<any>(Symbol("init"));
 
   useEffect(() => {
+    // 所有组件看到的 ws.data 是同一份（同一条 ws 推过来的）
     if (ws.data === undefined) return;
-    if (ws.data === lastDataRef.current) return; // 已处理，跳过
+    if (ws.data === lastDataRef.current) return;
     lastDataRef.current = ws.data;
 
     setList(
@@ -48,5 +45,6 @@ export function useWSList<T = JSONValue>(opts: UseWSListOptions<T>) {
     [setList]
   );
 
+  // 返回的 send 也是同一条 ws 的 send
   return { ...ws, list: list ?? [], clear };
 }

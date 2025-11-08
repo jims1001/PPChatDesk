@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import s from "./index.module.scss";
 
 import { EditorState, Plugin } from "prosemirror-state";
@@ -56,6 +56,7 @@ export default function ReplyBox({
 }: ReplyBoxProps) {
     const [isPrivate, setIsPrivate] = useState(defaultPrivate);
     const [attachments, setAttachments] = useState<Attachment[]>([]);
+    const [canSend, setCanSend] = useState(false); // ✅ 用来控制按钮
 
     // —— 动态滑块测量 —— //
     const chipBtnRef = useRef<HTMLButtonElement>(null);
@@ -68,7 +69,6 @@ export default function ReplyBox({
         const btn = chipBtnRef.current;
         if (!activeEl || !btn) return;
 
-        // 用 offset 系列，相对于父容器 padding 边框对齐，避免 1~4px 视觉偏差
         const x = activeEl.offsetLeft;
         const w = activeEl.offsetWidth;
         setChipVars({ w, x });
@@ -91,6 +91,12 @@ export default function ReplyBox({
     const wrapperRef = useRef<HTMLDivElement>(null);
     const viewRef = useRef<EditorView | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // 保存最新附件，用给 dispatchTransaction 用（它不会重建）
+    const attachmentsRef = useRef<Attachment[]>([]);
+    useEffect(() => {
+        attachmentsRef.current = attachments;
+    }, [attachments]);
 
     /** 从编辑器读取 HTML */
     const getHtml = useCallback(() => {
@@ -120,17 +126,23 @@ export default function ReplyBox({
             prev.forEach((a) => URL.revokeObjectURL(a.url));
             return [];
         });
+
+        // 清空后按钮关掉
+        setCanSend(false);
     }, [getHtml, attachments, isPrivate, onSend]);
 
-    // 初始化编辑器（注意：不要把 doSend 放依赖里以免重复初始化）
+    // 初始化编辑器（保持你原来的风格，不把 doSend 放进依赖里）
     useEffect(() => {
         if (!wrapperRef.current) return;
 
         const schema: Schema = basicSchema;
 
+        // 我们用一个 ref 来拿到最新的 doSend
+        const doSendRef = { current: doSend };
+
         // Cmd/Ctrl + Enter 发送
         const sendCommand = () => {
-            doSend();
+            doSendRef.current();
             return true;
         };
         const sendKeymap: Record<string, any> = {
@@ -138,7 +150,7 @@ export default function ReplyBox({
             "Ctrl-Enter": sendCommand,
         };
 
-        // —— 自定义一排图标（与截图顺序一致） —— //
+        // —— 工具栏 —— //
         const boldItem = new MenuItem({
             title: "Toggle strong style",
             run: toggleMark(schema.marks.strong),
@@ -153,7 +165,6 @@ export default function ReplyBox({
             icon: icons.em,
         });
 
-        // 链接：保持显示但禁用（basicSchema 无 link）
         const linkItem = new MenuItem({
             title: "Add or remove link",
             run: () => false,
@@ -176,7 +187,6 @@ export default function ReplyBox({
             icon: icons.redo,
         });
 
-        // 注意：basicSchema 没有列表节点，这里运行时需要保护性调用
         const bulletListItem = new MenuItem({
             title: "Wrap in bullet list",
             run: (st, d, v) =>
@@ -222,21 +232,42 @@ export default function ReplyBox({
                 dropCursor(),
                 gapCursor(),
                 menuBar({
-                    content: [simpleBar], // 一排菜单
-                    floating: true,       // 生成 .ProseMirror-menubar-wrapper
+                    content: [simpleBar],
+                    floating: true,
                 }),
                 placeholderPlugin(placeholder),
             ],
         });
 
-        const view = new EditorView(wrapperRef.current, {
+        // ⭐ 这里要先声明一个变量，再创建 view，这样 dispatchTransaction 能闭包到它
+        let view: EditorView;
+
+        view = new EditorView(wrapperRef.current, {
             state,
+            dispatchTransaction(tr) {
+                // 正常的 ProseMirror 流程
+                const newState = view.state.apply(tr);
+                view.updateState(newState);
+
+                // 文本变化后，算一下还能不能发
+                const html = (view.dom as HTMLElement).innerHTML.trim();
+                const text = htmlToPlainText(html);
+                const hasText = !!text && text.length > 0;
+                const hasAttach = attachmentsRef.current.length > 0;
+                setCanSend(hasText || hasAttach);
+            },
             attributes: {
                 class: `ProseMirror-woot-style`,
                 style: `--min-rows:${minRows};`,
             },
         });
+
         viewRef.current = view;
+
+        // 初始化时也算一次
+        const initHtml = (view.dom as HTMLElement).innerHTML.trim();
+        const initText = htmlToPlainText(initHtml);
+        setCanSend((initText && initText.length > 0) || attachmentsRef.current.length > 0);
 
         return () => {
             if (viewRef.current) {
@@ -249,15 +280,17 @@ export default function ReplyBox({
             });
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [placeholder, minRows]);
+    }, [placeholder, minRows]); // ✅ 不把 doSend 放进来，避免重建导致“不能编辑”
 
-    /** 是否可发送 */
-    const canSend = useMemo(() => {
-        if (disabled) return false;
-        const html = getHtml();
+    // 附件变化时也要更新按钮
+    useEffect(() => {
+        const view = viewRef.current;
+        const html = view ? (view.dom as HTMLElement).innerHTML.trim() : "";
         const text = htmlToPlainText(html);
-        return (text && text.length > 0) || attachments.length > 0;
-    }, [disabled, attachments.length, getHtml]);
+        const hasText = !!text && text.length > 0;
+        const hasAttach = attachments.length > 0;
+        setCanSend(hasText || hasAttach);
+    }, [attachments]);
 
     const openFile = () => fileInputRef.current?.click();
     const onFilesSelected = (files: FileList | null) => {
@@ -293,8 +326,12 @@ export default function ReplyBox({
                     disabled={disabled}
                     aria-label="切换回复/私人便笺"
                 >
-                    <div ref={replyRef} className={s.toggleChipItem}>回复</div>
-                    <div ref={noteRef} className={s.toggleChipItem}>私人便笺</div>
+                    <div ref={replyRef} className={s.toggleChipItem}>
+                        回复
+                    </div>
+                    <div ref={noteRef} className={s.toggleChipItem}>
+                        私人便笺
+                    </div>
                     <div className={s.toggleKnob} aria-hidden />
                 </button>
 
@@ -305,7 +342,7 @@ export default function ReplyBox({
                 </button>
             </div>
 
-            {/* 编辑器（menubar-wrapper + menubar + contentEditable 会注入这里） */}
+            {/* 编辑器 */}
             <div className={s.editorCard}>
                 <div className={s.pmWrapper} ref={wrapperRef} />
                 {/* 附件预览 */}
@@ -338,7 +375,9 @@ export default function ReplyBox({
             {/* 底部操作区 */}
             <div className={s.bottomRow}>
                 <div className={s.leftWrap}>
-                    <button type="button" className={s.circleBtn} title="表情（示意）" disabled={disabled}>🙂</button>
+                    <button type="button" className={s.circleBtn} title="表情（示意）" disabled={disabled}>
+                        🙂
+                    </button>
 
                     <input
                         ref={fileInputRef}
@@ -348,13 +387,31 @@ export default function ReplyBox({
                         hidden
                         onChange={(e) => onFilesSelected(e.target.files)}
                     />
-                    <button type="button" className={s.circleBtn} title="添加附件" onClick={openFile} disabled={disabled}>📎</button>
-                    <button type="button" className={s.circleBtn} title="语音（示意）" disabled={disabled}>🎙</button>
-                    <button type="button" className={s.circleBtn} title="签名（示意）" disabled={disabled}>✒️</button>
+                    <button
+                        type="button"
+                        className={s.circleBtn}
+                        title="添加附件"
+                        onClick={openFile}
+                        disabled={disabled}
+                    >
+                        📎
+                    </button>
+                    <button type="button" className={s.circleBtn} title="语音（示意）" disabled={disabled}>
+                        🎙
+                    </button>
+                    <button type="button" className={s.circleBtn} title="签名（示意）" disabled={disabled}>
+                        ✒️
+                    </button>
                 </div>
 
                 <div className={s.rightWrap}>
-                    <button type="button" className={s.sendBtn} disabled={!canSend} onClick={doSend} title="⌘/Ctrl + Enter 发送">
+                    <button
+                        type="button"
+                        className={s.sendBtn}
+                        disabled={disabled || !canSend}
+                        onClick={doSend}
+                        title="⌘/Ctrl + Enter 发送"
+                    >
                         {sendText}
                     </button>
                 </div>

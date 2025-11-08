@@ -4,6 +4,8 @@ import MessageList from "@/pages/chat/messageview/messageList";
 import type { ChatMessage } from "@/pages/chat/messageview//type";
 import Composer from "./composer";
 import ReplyBox from "./replay";
+import { createTextMessage } from "@/data/conversation/messae";
+import { useWSList } from "@/net/lib/ws/useWSList";
 
 const PAGE_SIZE = 30;
 const TOTAL_FAKE = 240;
@@ -37,6 +39,14 @@ function buildFakeDB(total: number): ChatMessage[] {
 }
 
 export default function ChatWindow() {
+
+
+    const ws = useWSList<any>({
+        listKey: "chat-list",
+        reduce: (prev, item) => [...prev, item],
+    });
+
+
     const DB = useMemo(() => buildFakeDB(TOTAL_FAKE), []);
     // 初始化时：把它们对齐
     const total = DB.length;
@@ -77,7 +87,11 @@ export default function ChatWindow() {
             createdAt: Date.now(),
         };
         setMessages(prev => [...prev, m]);
-        // 如需写回“后端库”，可以 DB.push(m);
+        const msg = createTextMessage(html);
+        ws.send?.(msg);
+        // 发送连接的消息
+        // 如需写回“后端库，可以 DB.push(m);
+
     }, []);
 
     const onPickFile = useCallback((file: File) => {
@@ -118,7 +132,10 @@ export default function ChatWindow() {
             <div className={styles.composerWrap}>
                 <div style={{ maxWidth: 720, margin: "24px auto" }}>
                     <ReplyBox
-                        onSend={(p) => {/* 发送 */ }}
+                        onSend={(p) => {
+                            console.log("send11", p);
+                            onSend(p.html, p.text);
+                        }}
                     />
                 </div>
             </div>
