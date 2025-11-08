@@ -11,9 +11,9 @@ export default function App() {
     return (
         <>
             <div className="demo-title">
-                <strong>ResizablePaneGroup Demo</strong>
+                {/* <strong>ResizablePaneGroup Demo</strong> */}
                 <span style={{ marginLeft: 12, color: '#666' }}>
-                    当前宽度：[{sizes.map(s => s.toFixed(1)).join('% , ')}%]
+                    {/* 当前宽度：[{sizes.map(s => s.toFixed(1)).join('% , ')}%] */}
                 </span>
             </div>
 

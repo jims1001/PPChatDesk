@@ -7,9 +7,7 @@ import React from 'react'
 import 'uno.css'
 const rootEl = document.getElementById('root')!  // 非空断言很重要
 ReactDOM.createRoot(rootEl).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </React.StrictMode>
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
 )
