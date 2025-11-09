@@ -16,7 +16,9 @@ import { useWSList } from "@/net/lib/ws/useWSList";
 import { useEffect, useRef } from 'react'
 import ResizableThreePanesDemo from './pages/demo'
 import ChatWindow from '@/pages/chat/messageview'
-import { WSProvider } from './net/lib/ws/context'
+import { useLogin } from "@/data/user/hook/useLogin";
+import { useGetUser } from "@/data/user/hook/useGetUser";
+
 // import { useGet } from './net/hook/useGet'
 
 
@@ -93,6 +95,27 @@ const baseAuthFrame = {
 
 export default function App() {
 
+  const { login, loading, error, data } = useLogin();
+  const { data: user, mutate } = useGetUser(undefined);
+
+  console.log('login data', data);
+  console.log('user data', user);
+
+  const handleLogin = async () => {
+    // 这里用你给的那个登录请求体
+    await login({
+      sessionID: "f9c1d1c6-6c85-4c1d-8e23-2f83c62a7f12",
+      userID: "u_10001",
+      tenantID: "tenant_001",
+      deviceType: "ios",
+      deviceID: "aabbccddeeff00112233",
+      ip: "192.168.1.55",
+      userAgent: "iPhone14,2 iOS/17.0 Safari/605.1.15",
+      scopes: ["read", "write", "profile"],
+      ttl: 3600,
+      now: "2025-08-24T13:00:00Z",
+    });
+  };
 
 
   const ws = useWSList<any>({
@@ -113,6 +136,17 @@ export default function App() {
       ws.send?.(authFrame);
     }
   }, [ws.data, ws.send]);
+
+  useEffect(() => {
+    if (!data?.access_token) return;
+    // 2. 再手动拉一次用户信息
+    mutate();
+  }, [data?.access_token]);
+
+  // 处理登录逻辑
+  useEffect(() => {
+    handleLogin();
+  }, []);
 
 
   // const { data } = useGet('api/users/self', undefined, undefined, {
@@ -239,11 +273,11 @@ export default function App() {
   // }, []);
 
 
-  const sendText = () => {
-    if (!wsRef.current) return;
-    const ws = wsRef.current;
-    ws.send({ type: "chat.message", channel: "room", payload: { text: `hello @ ${new Date().toLocaleTimeString()}` } });
-  };
+  // const sendText = () => {
+  //   if (!wsRef.current) return;
+  //   const ws = wsRef.current;
+  //   ws.send({ type: "chat.message", channel: "room", payload: { text: `hello @ ${new Date().toLocaleTimeString()}` } });
+  // };
 
 
   return (

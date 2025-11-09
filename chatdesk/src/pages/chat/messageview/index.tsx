@@ -1,139 +1,152 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import styles from "./index.module.scss";
 import MessageList from "@/pages/chat/messageview/messageList";
-import type { ChatMessage } from "@/pages/chat/messageview//type";
-import Composer from "./composer";
 import ReplyBox from "./replay";
 import { createTextMessage } from "@/data/conversation/messae";
 import { useWSList } from "@/net/lib/ws/useWSList";
-
-const PAGE_SIZE = 30;
-const TOTAL_FAKE = 240;
-
-const now = Date.now();
-const tailSeed: ChatMessage[] = [
-    { id: "m1", kind: "text", direction: "in", text: "你好 咨询下 家具的事情", createdAt: now - 1000 * 60 * 5 },
-    { id: "m2", kind: "text", direction: "out", text: "给团队一个联系您的方法。", createdAt: now - 1000 * 60 * 4 + 10 },
-    { id: "m3", kind: "text", direction: "out", text: "通过电子邮件得到通知", createdAt: now - 1000 * 60 * 4 },
-    { id: "m4", kind: "text", direction: "out", text: "kimjms@fas.com", createdAt: now - 1000 * 60 * 4 - 5 },
-    { id: "m5", kind: "text", direction: "in", text: "请问需要咨询哪方面的家具呢 我这边主要处理欧美相关的家具", createdAt: now - 1000 * 60 * 3 },
-];
-
-// 构造一个“后端消息库”：时间递增
-function buildFakeDB(total: number): ChatMessage[] {
-    const base = now - total * 60_000;
-    const histCount = Math.max(0, total - tailSeed.length);
-    const history: ChatMessage[] = Array.from({ length: histCount }).map((_, i) => ({
-        id: `old-${i + 1}`,
-        kind: "text",
-        direction: i % 2 === 0 ? "in" : "out",
-        text: `历史消息 #${i + 1}`,
-        createdAt: base + i * 60_000,
-    }));
-    const shiftedTail = tailSeed.map((m, idx) => ({
-        ...m,
-        id: m.id || `seed-${idx}`,
-        createdAt: base + histCount * 60_000 + (idx + 1) * 60_000,
-    }));
-    return [...history, ...shiftedTail];
-}
-
+import { useGetUser } from "@/data/user/hook/useGetUser";
+import { useGetChatHistory } from "@/data/conversation/hook/useGetChatHistory";
+import type { ChatMessage } from "@/data/conversation/chatMessage";
+const PAGE_SIZE = 50;
+const CONVERSATION_ID = "p2p:user_10001_user_10002";
 export default function ChatWindow() {
-
-
     const ws = useWSList<any>({
         listKey: "chat-list",
         reduce: (prev, item) => [...prev, item],
     });
 
+    const { data: user } = useGetUser(undefined);
 
-    const DB = useMemo(() => buildFakeDB(TOTAL_FAKE), []);
-    // 初始化时：把它们对齐
-    const total = DB.length;
-    const PAGE_SIZE = 50;
-    const initialStart = Math.max(0, total - PAGE_SIZE);
 
-    const [messages, setMessages] = useState(() => DB.slice(initialStart, total));
-    const [rangeStart, setRangeStart] = useState(initialStart);
-    // 关键：firstIndex 与 rangeStart 对齐
-    const [firstIndex, setFirstIndex] = useState(initialStart);
+    const [query, setQuery] = useState<{
+        conversationId: string;
+        lastSeq: number;
+        limit: number;
+    } | null>(null);
 
-    const [hasMore, setHasMore] = useState(initialStart > 0);
-    const [loadingMore, setLoadingMore] = useState(false);
+    useEffect(() => {
+        if (user) {
+            setQuery({
+                conversationId: CONVERSATION_ID,
+                lastSeq: 0,
+                limit: PAGE_SIZE,
+            });
+        }
+    }, [user]);
 
-    // 触顶：加载上一页，并下调 firstIndex，避免视觉抖动
-    const loadOlder = useCallback(async () => {
-        if (loadingMore || !hasMore) return;
-        setLoadingMore(true);
-        await new Promise(r => setTimeout(r, 500));
 
-        const nextStart = Math.max(0, rangeStart - PAGE_SIZE);
-        const older = DB.slice(nextStart, rangeStart);
+    const { data: msgData, isLoading } = useGetChatHistory(query, {
+        revalidateOnFocus: false,
+        revalidateIfStale: false,
+        revalidateOnReconnect: false,
+    });
 
-        setFirstIndex(prev => prev - older.length); // ⭐️ 关键：虚拟索引向前移动
-        setMessages(prev => [...older, ...prev]);
-        setRangeStart(nextStart);
-        setHasMore(nextStart > 0);
-        setLoadingMore(false);
-    }, [loadingMore, hasMore, rangeStart, DB]);
+    const serverMessages = useMemo(() => {
+        if (!msgData?.list) return [];
 
-    // 发送（尾部追加）：followOutput="auto" 会在底部时自动跟随
-    const onSend = useCallback((html: string, plain: string) => {
-        const m: ChatMessage = {
-            id: `m-${Date.now()}`,
-            kind: "text",
-            direction: "out",
-            text: (plain || html).trim(),
-            createdAt: Date.now(),
-        };
-        setMessages(prev => [...prev, m]);
-        const msg = createTextMessage(html);
-        ws.send?.(msg);
-        // 发送连接的消息
-        // 如需写回“后端库，可以 DB.push(m);
+        return msgData.list
+            .slice()
+            .sort((a: ChatMessage, b: ChatMessage) => a.seq_num - b.seq_num)
+            .map((m: ChatMessage) => {
+                // 判定消息方向：send_id 是否为当前用户
+                const direction =
+                    user && m.send_id === user.UserID ? "out" : "in";
 
-    }, []);
+                // 统一取文本内容（可能在 text_elem 或 content_text）
+                const text =
+                    m.text_elem?.content?.trim() ||
+                    m.content_text?.trim() ||
+                    "";
 
-    const onPickFile = useCallback((file: File) => {
-        const ext = (file.name.split(".").pop() || "").toLowerCase();
-        const kind: ChatMessage["kind"] =
-            /png|jpe?g|gif|webp/.test(ext) ? "image" :
-                /mp4|webm|ogg/.test(ext) ? "video" :
-                    /mp3|wav|m4a|aac|ogg/.test(ext) ? "audio" : "file";
-        const url = URL.createObjectURL(file);
+                return {
+                    id: m.client_msg_id || m.server_msg_id || `${m.seq_num}`,
+                    kind: "text",
+                    direction,
+                    text,
+                    createdAt: m.create_time_ms || m.send_time_ms || Date.now(),
+                    raw: m, // 可选保留原始消息体
+                };
+            });
+    }, [msgData, user]);
 
-        setMessages(prev => [
-            ...prev,
-            {
-                id: `att-${Date.now()}`,
-                kind,
+    const [localMessages, setLocalMessages] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (!ws.list || ws.list.length === 0) return;
+
+        const append = ws.list.map((item: any) => {
+            return {
+                id: item.client_msg_id || `ws-${Date.now()}`,
+                kind: "text",
+                direction: item.send_id === user?.UserID ? "out" : "in",
+                text: item.text_elem?.content || item.content_text || "",
+                createdAt: item.create_time_ms || Date.now(),
+                raw: item,
+            };
+        });
+
+        setLocalMessages((prev) => [...prev, ...append]);
+    }, [ws.list, user]);
+
+    const allMessages = useMemo(() => {
+        return [...serverMessages, ...localMessages].sort(
+            (a, b) => a.createdAt - b.createdAt
+        );
+    }, [serverMessages, localMessages]);
+
+    const loadOlder = useCallback(() => {
+        if (!msgData?.hasMore) return;
+        setQuery((prev) => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                lastSeq: msgData.lastSeq, // 接口返回的上一页 seq
+            };
+        });
+    }, [msgData]);
+
+    // ✅ 发送消息
+    const onSend = useCallback(
+        (html: string, plain: string) => {
+            const text = (plain || html).trim();
+            const m = {
+                id: `local-${Date.now()}`,
+                kind: "text",
                 direction: "out",
+                text,
                 createdAt: Date.now(),
-                attachments: [{ url, name: file.name, size: file.size, mime: file.type }],
-                text: kind === "file" ? file.name : undefined,
-            },
-        ]);
-    }, []);
+            };
+            setLocalMessages((prev) => [...prev, m]);
 
-    const footer = useMemo(() => (hasMore ? "" : "所有对话已加载 🎉"), [hasMore]);
+            const msg = createTextMessage(html);
+            ws.send?.(msg);
+        },
+        [ws]
+    );
+
+    const footer = useMemo(() => {
+        if (isLoading) return "加载中...";
+        if (!msgData) return "";
+        return msgData.hasMore ? "" : "所有对话已加载 🎉";
+    }, [isLoading, msgData]);
 
     return (
         <div className={styles.root}>
             <div className={styles.messages}>
                 <MessageList
-                    items={messages}
-                    firstItemIndex={firstIndex}   // ✅ 传入
-                    hasMore={hasMore}
-                    loadingMore={loadingMore}
+                    items={allMessages}
+                    firstItemIndex={0}
+                    hasMore={msgData?.hasMore ?? false}
+                    loadingMore={isLoading}
                     onLoadOlder={loadOlder}
                     footerText={footer}
                 />
             </div>
+
             <div className={styles.composerWrap}>
                 <div style={{ maxWidth: 720, margin: "24px auto" }}>
                     <ReplyBox
                         onSend={(p) => {
-                            console.log("send11", p);
                             onSend(p.html, p.text);
                         }}
                     />

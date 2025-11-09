@@ -1,5 +1,4 @@
-// 统一 HTTP 请求封装：fetch + 超时 + 鉴权 + 错误统一化 + 查询参数序列化
-// 你可以替换为 axios，但 SWR + fetch 足够轻量。
+import { appConfig } from "@/net/lib/config";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -9,46 +8,39 @@ export interface RequestOptions<TBody = any> {
   body?: TBody;
   headers?: Record<string, string>;
   signal?: AbortSignal;
-  timeoutMs?: number; // 默认 15s
-  baseURL?: string; // 可覆盖全局 baseURL
+  timeoutMs?: number;
+  baseURL?: string;
 }
 
-let _baseURL = "";
+// token & hash 获取函数
 let _getToken: () => string | null = () => null;
+let _getTokenHash: () => string | null = () => null;
 
-/** 在应用启动处配置一次 */
-export function setupHttp(config: {
-  baseURL: string;
-  getToken?: () => string | null;
-}) {
-  _baseURL = config.baseURL;
-  if (config.getToken) _getToken = config.getToken;
+/** 注册 token 和 hash 获取方法 */
+export function setHttpTokenGetter(
+  getToken: () => string | null,
+  getTokenHash?: () => string | null
+) {
+  _getToken = getToken;
+  if (getTokenHash) _getTokenHash = getTokenHash;
 }
 
-function toQuery(params?: Record<string, any>) {
-  if (!params) return "";
-  const search = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) {
-    if (v === undefined || v === null) continue;
-    if (Array.isArray(v)) {
-      v.forEach((item) => search.append(k, String(item)));
-    } else if (typeof v === "object") {
-      search.append(k, JSON.stringify(v));
-    } else {
-      search.append(k, String(v));
-    }
+/** 内部安全获取：注册函数 > localStorage */
+function resolveToken(): string | null {
+  try {
+    return _getToken ? _getToken() : localStorage.getItem("authorization");
+  } catch {
+    return null;
   }
-  const qs = search.toString();
-  return qs ? `?${qs}` : "";
 }
 
-export class HttpError extends Error {
-  status: number;
-  data: any;
-  constructor(status: number, data: any, message?: string) {
-    super(message || `HttpError ${status}`);
-    this.status = status;
-    this.data = data;
+function resolveTokenHash(): string | null {
+  try {
+    return _getTokenHash
+      ? _getTokenHash()
+      : localStorage.getItem("authorizationHash");
+  } catch {
+    return null;
   }
 }
 
@@ -62,36 +54,39 @@ export async function request<TResp = any, TBody = any>(
     body,
     headers = {},
     signal,
-    timeoutMs = 15000,
-    baseURL,
+    timeoutMs = appConfig.requestTimeoutMs,
+    baseURL = appConfig.apiBaseURL,
   } = opts;
 
   const url =
-    (baseURL ?? _baseURL).replace(/\/$/, "") +
+    baseURL.replace(/\/$/, "") +
     "/" +
     path.replace(/^\//, "") +
-    toQuery(params);
+    (params ? `?${new URLSearchParams(params as any)}` : "");
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort("timeout"), timeoutMs);
+  if (signal) signal.addEventListener("abort", () => controller.abort());
 
-  // 合并外部 signal（可选）
-  if (signal) {
-    signal.addEventListener("abort", () => controller.abort(signal.reason));
-  }
+  const token = resolveToken();
+  const hash = resolveTokenHash();
 
-  const token = _getToken();
   const isJsonBody =
-    body !== undefined &&
-    body !== null &&
+    body &&
     !(body instanceof FormData) &&
-    !(body instanceof Blob);
+    !(body instanceof Blob) &&
+    typeof body === "object";
 
-  const resp = await fetch(url, {
+  // ✅ 添加两个 header：authorization + authorizationHash
+  const authHeaders: Record<string, string> = {};
+  if (token) authHeaders["Authorization"] = `Bearer ${token}`;
+  if (hash) authHeaders["authorizationHash"] = hash;
+
+  const res = await fetch(url, {
     method,
     headers: {
       ...(isJsonBody ? { "Content-Type": "application/json" } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...authHeaders,
       ...headers,
     },
     body:
@@ -100,22 +95,12 @@ export async function request<TResp = any, TBody = any>(
         : isJsonBody
         ? JSON.stringify(body)
         : (body as any),
+    credentials: "include",
     signal: controller.signal,
-    credentials: "include", // 如不需要跨域 cookie，可去掉
   }).finally(() => clearTimeout(timer));
 
-  const contentType = resp.headers.get("content-type") || "";
-  const isJson = contentType.includes("application/json");
-
-  // 204 无内容
-  if (resp.status === 204) return undefined as unknown as TResp;
-
-  const data = isJson ? await resp.json().catch(() => null) : await resp.text();
-
-  if (!resp.ok) {
-    // 统一抛出 HttpError，SWR 会在 onError 回调中收到
-    throw new HttpError(resp.status, data, data?.message || resp.statusText);
-  }
-
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : {};
+  if (!res.ok) throw new Error(data.message || res.statusText);
   return data as TResp;
 }

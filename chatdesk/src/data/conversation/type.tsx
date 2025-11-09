@@ -12,3 +12,6 @@ export type PageResp = {
     items: Conversation[];
     nextCursor?: string | null;
 };
+
+
+
