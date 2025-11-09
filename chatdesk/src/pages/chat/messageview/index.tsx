@@ -7,7 +7,7 @@ import { useWSList } from "@/net/lib/ws/useWSList";
 import { useGetUser } from "@/data/user/hook/useGetUser";
 import { useGetChatHistory } from "@/data/conversation/hook/useGetChatHistory";
 import type { ChatMessage } from "@/data/conversation/chatMessage";
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 10;
 const CONVERSATION_ID = "p2p:user_10001_user_10002";
 export default function ChatWindow() {
     const ws = useWSList<any>({
@@ -16,8 +16,6 @@ export default function ChatWindow() {
     });
 
     const { data: user } = useGetUser(undefined);
-
-
     const [query, setQuery] = useState<{
         conversationId: string;
         lastSeq: number;
@@ -42,11 +40,11 @@ export default function ChatWindow() {
     });
 
     const serverMessages = useMemo(() => {
-        if (!msgData?.list) return [];
+        if (!msgData) return [];
 
-        return msgData.list
+        return msgData
             .slice()
-            .sort((a: ChatMessage, b: ChatMessage) => a.seq_num - b.seq_num)
+            .sort((a: ChatMessage, b: ChatMessage) => b.seq_num - a.seq_num)
             .map((m: ChatMessage) => {
                 // 判定消息方向：send_id 是否为当前用户
                 const direction =
@@ -69,29 +67,63 @@ export default function ChatWindow() {
             });
     }, [msgData, user]);
 
+    console.log('serverMessages', serverMessages);
+
     const [localMessages, setLocalMessages] = useState<any[]>([]);
 
     useEffect(() => {
         if (!ws.list || ws.list.length === 0) return;
+        const append = ws.list.filter((item: any) => item.type == 1).map((item: any) => {
 
-        const append = ws.list.map((item: any) => {
+            console.log('wsItem', item);
+
             return {
                 id: item.client_msg_id || `ws-${Date.now()}`,
                 kind: "text",
                 direction: item.send_id === user?.UserID ? "out" : "in",
-                text: item.text_elem?.content || item.content_text || "",
+                text: item.payload.text_elem?.content || item.payload.content_text || item.payload.quoteElem?.text || "",
                 createdAt: item.create_time_ms || Date.now(),
-                raw: item,
+                raw: { ...item.payload, seq_num: item.payload.seq },
             };
         });
 
-        setLocalMessages((prev) => [...prev, ...append]);
+        setLocalMessages((prev) => {
+            const existingSeqs = new Set(
+                prev
+                    .map((m) => m.raw?.seq_num)
+                    .filter((s) => s !== undefined && s !== null)
+            );
+
+            const deduped = append.filter((m) => {
+                const seq = m.raw?.seq_num;
+                // 没有 seq 的（例如本地临时消息）不参与去重
+                if (seq === undefined || seq === null) return true;
+                return !existingSeqs.has(seq);
+            });
+
+            return [...prev, ...deduped];
+        });
     }, [ws.list, user]);
 
     const allMessages = useMemo(() => {
-        return [...serverMessages, ...localMessages].sort(
-            (a, b) => a.createdAt - b.createdAt
-        );
+        // 合并
+        const merged = [...serverMessages, ...localMessages];
+
+        return merged.sort((a: any, b: any) => {
+            // 1) 先拿 seq_num（可能在 raw 里，也可能你已经扁平了）
+            const sa = Number(a.raw?.seq_num ?? a.seq_num ?? 0);
+            const sb = Number(b.raw?.seq_num ?? b.seq_num ?? 0);
+
+            // 2) 如果双方都有 seq，就按 seq 排（你说要按 seq_num，就用这个）
+            if (sa && sb && sa !== sb) {
+                return sa - sb; // 小的在前 → 从旧到新
+            }
+
+            // 3) 否则用时间兜底，防止本地消息/WS 没 seq
+            const ta = Number(a.createdAt ?? 0);
+            const tb = Number(b.createdAt ?? 0);
+            return ta - tb;
+        });
     }, [serverMessages, localMessages]);
 
     const loadOlder = useCallback(() => {
@@ -129,6 +161,9 @@ export default function ChatWindow() {
         if (!msgData) return "";
         return msgData.hasMore ? "" : "所有对话已加载 🎉";
     }, [isLoading, msgData]);
+
+
+    console.log('allMessages', allMessages);
 
     return (
         <div className={styles.root}>

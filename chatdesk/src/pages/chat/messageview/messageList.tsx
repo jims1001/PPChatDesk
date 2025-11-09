@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import styles from "./messageList.module.scss";
 import MessageCell from "@/pages/chat/messageview/cell";
-import type { ChatMessage } from "@/pages/chat/messageview/type";
+import type { ChatMessage } from "@/data/conversation/chatMessage";
 
 interface Props {
     items: ChatMessage[];
@@ -43,11 +43,11 @@ export default function MessageList({
                 data={items}
                 firstItemIndex={firstItemIndex}
                 itemContent={(i, item) => (
-                    <div className={styles.row}>
-                        <MessageCell msg={item as ChatMessage} />
+                    <div className={styles.row} key={'item' + i}>
+                        <MessageCell key={"msg" + i} msg={item as ChatMessage} />
                     </div>
                 )}
-                computeItemKey={(_, item) => (item as ChatMessage).id}
+                computeItemKey={(i, _) => 'MessageList' + i}
                 followOutput="auto"
                 increaseViewportBy={{ top: 600, bottom: 600 }}
                 atBottomStateChange={(atBottom) => setShowJump(!atBottom)}
@@ -56,7 +56,7 @@ export default function MessageList({
                 }}
                 components={{
                     Header: () => (
-                        <div className={styles.header}>
+                        <div className={styles.header} key={"msg_header"}>
                             {loadingMore ? "加载中…" : hasMore ? "" : footerText}
                         </div>
                     ),
