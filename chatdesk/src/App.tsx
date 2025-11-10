@@ -18,6 +18,7 @@ import ResizableThreePanesDemo from './pages/demo'
 import ChatWindow from '@/pages/chat/messageview'
 import { useLogin } from "@/data/user/hook/useLogin";
 import { useGetUser } from "@/data/user/hook/useGetUser";
+import EmptyConversation from './pages/chat/empty'
 
 // import { useGet } from './net/hook/useGet'
 
@@ -95,7 +96,7 @@ const baseAuthFrame = {
 
 export default function App() {
 
-  const { login, loading, error, data } = useLogin();
+  const { login, data } = useLogin();
   const { data: user, mutate } = useGetUser(undefined);
 
   console.log('login data', data);
@@ -154,7 +155,11 @@ export default function App() {
 
     <Routes>
       <Route path="/" element={<ResizableThreePanesDemo />}>
-        <Route index element={<Navigate to="chat" replace />} />
+
+        <Route index element={<Navigate to="empty" replace />} />
+        <Route path='empty' element={<EmptyConversation></EmptyConversation>}></Route>
+        {/* 
+        <Route element={<Navigate to="chat" replace />} /> */}
         <Route path="chat" element={<ChatWindow />} />
 
         <Route element={<Navigate to="/inbox/my" replace />} />

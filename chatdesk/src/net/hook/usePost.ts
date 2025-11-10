@@ -9,16 +9,20 @@ export function usePost<T = any>(
   swrOptions?: SWRConfiguration<T, any>,
   reqOverrides?: Omit<RequestOptions, "method" | "body">
 ) {
-  const key = path ? makeKey("POST", path, body) : null;
+  // ✅ 当 path 为空 或 body 为 undefined/null 时，不请求
+  const shouldFetch = path && body !== undefined && body !== null;
+  const key = shouldFetch ? makeKey("POST", path!, body) : null;
 
   const { data, error, isLoading, mutate } = useSWR<T>(
     key,
-    () =>
-      request<T>(path!, {
-        method: "POST",
-        body,
-        ...(reqOverrides || {}),
-      }),
+    key
+      ? () =>
+          request<T>(path!, {
+            method: "POST",
+            body,
+            ...(reqOverrides || {}),
+          })
+      : null, // ✅ key 为 null 时，fetcher 为 null -> 不执行请求
     swrOptions
   );
 
