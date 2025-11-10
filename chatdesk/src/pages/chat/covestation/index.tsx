@@ -123,8 +123,8 @@ export default function ChatViewApp() {
     );
 
 
-    const handleClick = () => {
-        navigate("/chat"); // ✅ 跳转到 http://localhost:5173/chat
+    const handleClick = (id: string) => {
+        navigate("/chat/" + id); // ✅ 跳转到 http://localhost:5173/chat
     };
 
 
@@ -155,7 +155,7 @@ export default function ChatViewApp() {
                         <div className={styles.fillScroll}>
                             <ConversationList onItemClick={(id) => {
                                 console.log('点击了会话1', id);
-                                handleClick();
+                                handleClick(id);
                             }}
                                 items={items}
                                 hasMore={hasMore}

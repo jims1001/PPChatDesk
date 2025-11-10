@@ -7,6 +7,7 @@ import { useWSList } from "@/net/lib/ws/useWSList";
 import { useGetUser } from "@/data/user/hook/useGetUser";
 import { useGetChatHistory } from "@/data/conversation/hook/useGetChatHistory";
 import type { ChatMessage } from "@/data/conversation/chatMessage";
+import { useParams } from "react-router-dom";
 const PAGE_SIZE = 10;
 const CONVERSATION_ID = "p2p:user_10001_user_10002";
 export default function ChatWindow() {
@@ -15,6 +16,7 @@ export default function ChatWindow() {
         reduce: (prev, item) => [...prev, item],
     });
 
+    const { id = CONVERSATION_ID } = useParams();
     const { data: user } = useGetUser(undefined);
     const [query, setQuery] = useState<{
         conversationId: string;
@@ -23,20 +25,17 @@ export default function ChatWindow() {
     } | null>(null);
 
     useEffect(() => {
-        if (user) {
+        if (user && id) {
             setQuery({
-                conversationId: CONVERSATION_ID,
+                conversationId: id,
                 lastSeq: 0,
                 limit: PAGE_SIZE,
             });
         }
-    }, [user]);
-
+    }, [user, id]); // ✅ 同时依赖 user 和 id
 
     const { data: msgData, isLoading } = useGetChatHistory(query, {
-        revalidateOnFocus: false,
-        revalidateIfStale: false,
-        revalidateOnReconnect: false,
+
     });
 
     const serverMessages = useMemo(() => {
@@ -68,15 +67,15 @@ export default function ChatWindow() {
     }, [msgData, user]);
 
     console.log('serverMessages', serverMessages);
-
+    console.log('nav id', id)
     const [localMessages, setLocalMessages] = useState<any[]>([]);
-
     useEffect(() => {
         if (!ws.list || ws.list.length === 0) return;
+
+        console.log('ws.list', ws.list);
+
         const append = ws.list.filter((item: any) => item.type == 1).map((item: any) => {
-
             console.log('wsItem', item);
-
             return {
                 id: item.client_msg_id || `ws-${Date.now()}`,
                 kind: "text",
@@ -108,7 +107,6 @@ export default function ChatWindow() {
     const allMessages = useMemo(() => {
         // 合并
         const merged = [...serverMessages, ...localMessages];
-
         return merged.sort((a: any, b: any) => {
             // 1) 先拿 seq_num（可能在 raw 里，也可能你已经扁平了）
             const sa = Number(a.raw?.seq_num ?? a.seq_num ?? 0);

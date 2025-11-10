@@ -1,5 +1,5 @@
 
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import SupportInboxLayout from '@/components/layout'
 import InboxMy from '@/pages/inbox/my'
 import InboxUnassigned from '@/pages/inbox/unassigned'
@@ -160,7 +160,7 @@ export default function App() {
         <Route path='empty' element={<EmptyConversation></EmptyConversation>}></Route>
         {/* 
         <Route element={<Navigate to="chat" replace />} /> */}
-        <Route path="chat" element={<ChatWindow />} />
+        <Route path="/chat/:id" key={useParams().id} element={<ChatWindow />} />
 
         <Route element={<Navigate to="/inbox/my" replace />} />
         <Route path="inbox">
