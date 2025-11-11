@@ -14,9 +14,7 @@ export const WSProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         key: "ws:/chat",
         url: "ws://localhost:8080/chat?user=B",
         options: {
-            autoReconnect: true,
-            reconnectBaseDelay: 800,
-            reconnectMaxDelay: 8000,
+            autoReconnect: true
         },
         parse: (raw) => {
             if (typeof raw === "string") {

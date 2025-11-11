@@ -6,25 +6,73 @@ type UseWSConfig = {
   url: string;
   options?: {
     autoReconnect?: boolean;
+    // 起步延迟，默认 30s
     reconnectBaseDelay?: number;
+    // 最大延迟，默认 120s
     reconnectMaxDelay?: number;
   };
   parse?: (raw: string | ArrayBuffer | Blob) => any;
 };
 
 export function useWS<T = any>(config: UseWSConfig) {
-  const { url, options, parse } = config;
+  const { key, url, options, parse } = config;
+
   const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimerRef = useRef<number | null>(null);
+
+  // 解决 React 18 严格模式：第一次 cleanup 不清理真正的资源
+  const hasMountedRef = useRef(false);
+  const isFirstCleanupRef = useRef(true);
+
   const [data, setData] = useState<T | undefined>(undefined);
   const [readyState, setReadyState] = useState<number>(WebSocket.CLOSED);
+  const [isDelaying, setIsDelaying] = useState<boolean>(false);
 
-  // 建立连接
+  // 用 ref 保存，避免进依赖触发重连
+  const isDelayingRef = useRef(false);
+
+  const reconnectDelayRef = useRef<number>(
+    options?.reconnectBaseDelay ?? 30_000
+  );
+  const maxDelay = options?.reconnectMaxDelay ?? 120_000;
+
+  // 初始化 window 容器
   useEffect(() => {
-    let ws = new WebSocket(url);
+    const w = window as any;
+    if (!w.__WS_STATUS__) {
+      w.__WS_STATUS__ = {};
+    }
+  }, []);
+
+  // 同步状态到 window
+  useEffect(() => {
+    (window as any).__WS_STATUS__[key] = {
+      readyState,
+      isDelaying,
+    };
+  }, [key, readyState, isDelaying]);
+
+  const connect = useCallback(() => {
+    // 一旦开始连，就不是延迟状态
+    isDelayingRef.current = false;
+    setIsDelaying(false);
+
+    // 清理旧连接
+    if (wsRef.current) {
+      wsRef.current.onopen = null;
+      wsRef.current.onmessage = null;
+      wsRef.current.onclose = null;
+      wsRef.current.onerror = null;
+      wsRef.current.close();
+    }
+
+    const ws = new WebSocket(url);
     wsRef.current = ws;
 
     ws.onopen = () => {
       setReadyState(ws.readyState);
+      // 连上后把延迟重置为起始值（30s）
+      reconnectDelayRef.current = options?.reconnectBaseDelay ?? 30_000;
     };
 
     ws.onmessage = (evt) => {
@@ -35,25 +83,61 @@ export function useWS<T = any>(config: UseWSConfig) {
 
     ws.onclose = () => {
       setReadyState(WebSocket.CLOSED);
-      // 简单自动重连
+      console.log("[useWS] 连接断开");
+
       if (options?.autoReconnect) {
-        const delay = options.reconnectBaseDelay ?? 1000;
-        setTimeout(() => {
-          // 重新触发 effect
-          setData(undefined);
+        // 如果已经在等，就不要再排一个了
+        if (isDelayingRef.current) return;
+
+        const delay = reconnectDelayRef.current;
+        console.warn(`[useWS] 连接断开，${delay}ms 后重连...`);
+
+        isDelayingRef.current = true;
+        setIsDelaying(true);
+
+        reconnectTimerRef.current = window.setTimeout(() => {
+          // 下次延迟 +30s，最多 120s
+          const nextDelay = Math.min(
+            reconnectDelayRef.current + 30_000,
+            maxDelay
+          );
+          reconnectDelayRef.current = nextDelay;
+
+          connect();
         }, delay);
       }
     };
 
     ws.onerror = () => {
-      // 简单处理
+      // 交给 onclose
     };
+  }, [url, options, parse, maxDelay]);
+
+  useEffect(() => {
+    // 真正第一次挂载
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      connect();
+    }
 
     return () => {
-      ws.close();
+      console.log("[useWS] 卸载");
+      // 第一次 cleanup 是 React 18 dev 的“探测”，我们不清理，让定时器能跑起来
+      if (isFirstCleanupRef.current) {
+        isFirstCleanupRef.current = false;
+        return;
+      }
+
+      // 真卸载才清理
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
     };
-    // 这里故意只依赖 url，真正项目要做更复杂的重连控制
-  }, [url]);
+  }, []);
 
   const send = useCallback((payload: any) => {
     const ws = wsRef.current;
@@ -65,5 +149,6 @@ export function useWS<T = any>(config: UseWSConfig) {
     data,
     send,
     readyState,
+    isDelaying,
   };
 }
