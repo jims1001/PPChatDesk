@@ -59,10 +59,10 @@ export default function ChatWindow() {
      *    这样一次点击只会走一次真正的请求
      */
     useEffect(() => {
-        if (!query) return;
+
         // 强制刷新历史
         mutate();
-    }, [query, mutate]);
+    }, [refreshKey]);
 
     // 把服务端消息结构化
     const serverMessages = useMemo(() => {
