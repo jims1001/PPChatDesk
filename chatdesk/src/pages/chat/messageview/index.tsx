@@ -7,23 +7,43 @@ import { useWSList } from "@/net/lib/ws/useWSList";
 import { useGetUser } from "@/data/user/hook/useGetUser";
 import { useGetChatHistory } from "@/data/conversation/hook/useGetChatHistory";
 import type { ChatMessage } from "@/data/conversation/chatMessage";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
+
 const PAGE_SIZE = 10;
 const CONVERSATION_ID = "p2p:user_10001_user_10002";
+
 export default function ChatWindow() {
+    // 实时 ws 消息
     const ws = useWSList<any>({
         listKey: "chat-list",
         reduce: (prev, item) => [...prev, item],
     });
 
+    const location = useLocation();
+    const fromUser = location.state?.fromUser;
+    const refreshKey = (location.state as any)?.refreshKey;
+
     const { id = CONVERSATION_ID } = useParams();
     const { data: user } = useGetUser(undefined);
+
+    // 查询条件
     const [query, setQuery] = useState<{
         conversationId: string;
         lastSeq: number;
         limit: number;
     } | null>(null);
 
+    // 拉历史的 hook，给它 query
+    const {
+        data: msgData,
+        mutate,
+        isLoading,
+    } = useGetChatHistory(query, {});
+
+    /**
+     * ① 当 user / id / refreshKey 变化时，重新设置查询条件
+     *    这一步只负责“准备参数”，不直接请求
+     */
     useEffect(() => {
         if (user && id) {
             setQuery({
@@ -32,12 +52,19 @@ export default function ChatWindow() {
                 limit: PAGE_SIZE,
             });
         }
-    }, [user, id]); // ✅ 同时依赖 user 和 id
+    }, [user, id, refreshKey]);
 
-    const { data: msgData, isLoading } = useGetChatHistory(query, {
+    /**
+     * ② 当 query 真正准备好后，再触发一次 mutate
+     *    这样一次点击只会走一次真正的请求
+     */
+    useEffect(() => {
+        if (!query) return;
+        // 强制刷新历史
+        mutate();
+    }, [query, mutate]);
 
-    });
-
+    // 把服务端消息结构化
     const serverMessages = useMemo(() => {
         if (!msgData) return [];
 
@@ -45,11 +72,7 @@ export default function ChatWindow() {
             .slice()
             .sort((a: ChatMessage, b: ChatMessage) => b.seq_num - a.seq_num)
             .map((m: ChatMessage) => {
-                // 判定消息方向：send_id 是否为当前用户
-                const direction =
-                    user && m.send_id === user.UserID ? "out" : "in";
-
-                // 统一取文本内容（可能在 text_elem 或 content_text）
+                const direction = user && m.send_id === user.UserID ? "out" : "in";
                 const text =
                     m.text_elem?.content?.trim() ||
                     m.content_text?.trim() ||
@@ -61,30 +84,37 @@ export default function ChatWindow() {
                     direction,
                     text,
                     createdAt: m.create_time_ms || m.send_time_ms || Date.now(),
-                    raw: m, // 可选保留原始消息体
+                    raw: m,
                 };
             });
     }, [msgData, user]);
 
-    console.log('serverMessages', serverMessages);
-    console.log('nav id', id)
+    // 本地追加的 ws 消息
     const [localMessages, setLocalMessages] = useState<any[]>([]);
+
     useEffect(() => {
         if (!ws.list || ws.list.length === 0) return;
 
-        console.log('ws.list', ws.list);
-
-        const append = ws.list.filter((item: any) => item.type == 1).map((item: any) => {
-            console.log('wsItem', item);
-            return {
-                id: item.client_msg_id || `ws-${Date.now()}`,
-                kind: "text",
-                direction: item.send_id === user?.UserID ? "out" : "in",
-                text: item.payload.text_elem?.content || item.payload.content_text || item.payload.quoteElem?.text || "",
-                createdAt: item.create_time_ms || Date.now(),
-                raw: { ...item.payload, seq_num: item.payload.seq },
-            };
-        });
+        // 过滤只接收自己的（按你原来的逻辑）
+        const append = ws.list
+            .filter((item: any) => {
+                const filter = item.type == 1 && item.from == fromUser;
+                return filter;
+            })
+            .map((item: any) => {
+                return {
+                    id: item.client_msg_id || `ws-${Date.now()}`,
+                    kind: "text",
+                    direction: item.send_id === user?.UserID ? "out" : "in",
+                    text:
+                        item.payload.text_elem?.content ||
+                        item.payload.content_text ||
+                        item.payload.quoteElem?.text ||
+                        "",
+                    createdAt: item.create_time_ms || Date.now(),
+                    raw: { ...item.payload, seq_num: item.payload.seq },
+                };
+            });
 
         setLocalMessages((prev) => {
             const existingSeqs = new Set(
@@ -95,47 +125,44 @@ export default function ChatWindow() {
 
             const deduped = append.filter((m) => {
                 const seq = m.raw?.seq_num;
-                // 没有 seq 的（例如本地临时消息）不参与去重
                 if (seq === undefined || seq === null) return true;
                 return !existingSeqs.has(seq);
             });
 
             return [...prev, ...deduped];
         });
-    }, [ws.list, user]);
+    }, [ws.list, user, fromUser]);
 
+    // 合并本地 + 服务端消息，并按 seq/time 排序
     const allMessages = useMemo(() => {
-        // 合并
         const merged = [...serverMessages, ...localMessages];
         return merged.sort((a: any, b: any) => {
-            // 1) 先拿 seq_num（可能在 raw 里，也可能你已经扁平了）
             const sa = Number(a.raw?.seq_num ?? a.seq_num ?? 0);
             const sb = Number(b.raw?.seq_num ?? b.seq_num ?? 0);
 
-            // 2) 如果双方都有 seq，就按 seq 排（你说要按 seq_num，就用这个）
             if (sa && sb && sa !== sb) {
-                return sa - sb; // 小的在前 → 从旧到新
+                return sa - sb; // 从小到大
             }
 
-            // 3) 否则用时间兜底，防止本地消息/WS 没 seq
             const ta = Number(a.createdAt ?? 0);
             const tb = Number(b.createdAt ?? 0);
             return ta - tb;
         });
     }, [serverMessages, localMessages]);
 
+    // 加载更多
     const loadOlder = useCallback(() => {
         if (!msgData?.hasMore) return;
         setQuery((prev) => {
             if (!prev) return prev;
             return {
                 ...prev,
-                lastSeq: msgData.lastSeq, // 接口返回的上一页 seq
+                lastSeq: msgData.lastSeq,
             };
         });
     }, [msgData]);
 
-    // ✅ 发送消息
+    // 发送消息
     const onSend = useCallback(
         (html: string, plain: string) => {
             const text = (plain || html).trim();
@@ -159,9 +186,6 @@ export default function ChatWindow() {
         if (!msgData) return "";
         return msgData.hasMore ? "" : "所有对话已加载 🎉";
     }, [isLoading, msgData]);
-
-
-    console.log('allMessages', allMessages);
 
     return (
         <div className={styles.root}>

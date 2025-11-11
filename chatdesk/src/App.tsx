@@ -99,8 +99,6 @@ export default function App() {
   const { login, data } = useLogin();
   const { data: user, mutate } = useGetUser(undefined);
 
-  console.log('login data', data);
-  console.log('user data', user);
 
   const handleLogin = async () => {
     // 这里用你给的那个登录请求体

@@ -13,8 +13,6 @@ export function usePost<T = any>(
   const shouldFetch = path && body !== undefined && body !== null;
   const key = shouldFetch ? makeKey("POST", path!, body) : null;
 
-  console.log("usePost", { path, body, shouldFetch, key });
-
   const { data, error, isLoading, mutate } = useSWR<T>(
     key,
     key

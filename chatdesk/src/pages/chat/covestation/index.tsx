@@ -7,6 +7,7 @@ import styles from "./index.module.scss";
 import { useGetChatConversatin } from "@/data/conversation/hook/useGetChatConversation";
 import { useGetUser } from "@/data/user/hook/useGetUser";
 import { useNavigate } from "react-router-dom";
+import { useWSList } from "@/net/lib/ws/useWSList";
 
 // 把后端的一个会话转成列表要的结构
 function mapConversationToItem(conv: any): ConversationItemData {
@@ -27,6 +28,14 @@ function mapConversationToItem(conv: any): ConversationItemData {
 }
 
 export default function ChatViewApp() {
+
+    const ws = useWSList<any>({
+        listKey: "chat-conversation",
+        reduce: (prev, item) => [...prev, item],
+    });
+
+    console.log('ChatViewApp ws', ws);
+
     // 分页参数
     const [page, setPage] = useState(1);
     const limit = 20;
@@ -48,6 +57,7 @@ export default function ChatViewApp() {
     // isLoggedIn 为 false 时传 null，SWR 不会请求
     const {
         data,
+        mutate,
         isLoading,
     } = useGetChatConversatin(
         isLoggedIn ? { page, limit } : undefined,
@@ -58,6 +68,40 @@ export default function ChatViewApp() {
 
 
     const navigate = useNavigate();
+
+
+    // 把现有会话里的 userId 收集一下，方便判断
+    const existingIds = useMemo(() => {
+        if (!data) return new Set<string>();
+        // 根据你实际结构改，这里假设会话里有 participantId / userId 之类的
+        return new Set(data.map((c: any) => c.UserID));
+    }, [data]);
+
+
+    useEffect(() => {
+        if (!ws.list || ws.list.length === 0) return;
+        if (!existingIds || existingIds.size === 0) return;
+
+        const unknownSenders = new Set<string>();
+
+        for (const item of ws.list) {
+
+            if (item.type == 1) {
+                const from = item?.from;
+                if (!from) continue;
+
+                if (!existingIds.has(from)) {
+                    unknownSenders.add(from);
+                }
+            }
+        }
+
+        // 只要发现有新的发送者，就刷新一次
+        if (unknownSenders.size > 0) {
+            console.log("[useChat] 发现新会话用户：", [...unknownSenders]);
+            mutate(); // 🔄 重新拉会话列表
+        }
+    }, [ws.list, existingIds]);
 
 
     // 4) 用户变化时重置分页与本地列表
@@ -73,7 +117,6 @@ export default function ChatViewApp() {
             // mutate();
         }
     }, [isLoggedIn]); // 注意依赖
-
 
 
 
@@ -124,7 +167,20 @@ export default function ChatViewApp() {
 
 
     const handleClick = (id: string) => {
-        navigate("/chat/" + id); // ✅ 跳转到 http://localhost:5173/chat
+        let from = "";
+        const refreshKey = Math.random();
+        for (const item of data ?? []) {
+            if (item.ConversationID === id) {
+                from = item.UserID ?? "'";
+                break;
+            }
+        }
+
+        if (from === "") {
+            console.log("没有找到对应的会话");
+        }
+
+        navigate("/chat/" + id, { state: { fromUser: from, refreshKey } }); // ✅ 跳转到 http://localhost:5173/chat
     };
 
 
