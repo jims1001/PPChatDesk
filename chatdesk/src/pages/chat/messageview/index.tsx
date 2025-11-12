@@ -31,6 +31,7 @@ export default function ChatWindow() {
         conversationId: string;
         lastSeq: number;
         limit: number;
+        refreshKey: string;
     } | null>(null);
 
     // 拉历史的 hook，给它 query
@@ -50,6 +51,7 @@ export default function ChatWindow() {
                 conversationId: id,
                 lastSeq: 0,
                 limit: PAGE_SIZE,
+                refreshKey
             });
         }
     }, [user, id, refreshKey]);
@@ -61,7 +63,7 @@ export default function ChatWindow() {
     useEffect(() => {
 
         // 强制刷新历史
-        mutate();
+        // mutate();
     }, [refreshKey]);
 
     // 把服务端消息结构化
